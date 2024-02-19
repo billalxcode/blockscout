@@ -5,8 +5,11 @@ map $http_upgrade $connection_upgrade {
 }
 
 server {
-    listen       80;
-    server_name  localhost;
+    listen       8090;
+    listen       443 ssl;
+    server_name  testnet-scan.deeplnetwork.org;
+    ssl_certificate /etc/explorer/explorer.pem;
+    ssl_certificate_key /etc/explorer/explorer.key;
     proxy_http_version 1.1;
 
     location ~ ^/(api|socket|sitemap.xml|auth/auth0|auth/auth0/callback|auth/logout) {
@@ -34,11 +37,14 @@ server {
 }
 server {
     listen       8080;
-    server_name  localhost;
+    listen       443 ssl;
+    server_name  testnet-stats.deeplnetwork.org;
+    ssl_certificate /etc/stats/stats.pem;
+    ssl_certificate_key /etc/stats/stats.key;
     proxy_http_version 1.1;
     proxy_hide_header Access-Control-Allow-Origin;
     proxy_hide_header Access-Control-Allow-Methods;
-    add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
+    add_header 'Access-Control-Allow-Origin' '*' always;
     add_header 'Access-Control-Allow-Credentials' 'true' always;
     add_header 'Access-Control-Allow-Methods' 'PUT, GET, POST, OPTIONS, DELETE, PATCH' always;
 
@@ -56,11 +62,14 @@ server {
 }
 server {
     listen       8081;
-    server_name  localhost;
+    listen       443 ssl;
+    server_name  testnet-visual.deeplnetwork.org;
+    ssl_certificate /etc/visual/visual.pem;
+    ssl_certificate_key /etc/visual/visual.key;
     proxy_http_version 1.1;
     proxy_hide_header Access-Control-Allow-Origin;
     proxy_hide_header Access-Control-Allow-Methods;
-    add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
+    add_header 'Access-Control-Allow-Origin' '*' always;
     add_header 'Access-Control-Allow-Credentials' 'true' always;
     add_header 'Access-Control-Allow-Methods' 'PUT, GET, POST, OPTIONS, DELETE, PATCH' always;
     add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-csrf-token' always;
@@ -80,7 +89,7 @@ server {
         proxy_set_header      Connection $connection_upgrade;
         proxy_cache_bypass    $http_upgrade;
         if ($request_method = 'OPTIONS') {
-            add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
+            add_header 'Access-Control-Allow-Origin' '*' always;
             add_header 'Access-Control-Allow-Credentials' 'true' always;
             add_header 'Access-Control-Allow-Methods' 'PUT, GET, POST, OPTIONS, DELETE, PATCH' always;
             add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-csrf-token' always;
@@ -89,5 +98,25 @@ server {
             add_header 'Content-Length' 0;
             return 204;
         }
+    }
+}
+
+server {
+    listen       8085;
+    listen       443 ssl;
+    server_name  testnet.deeplnetwork.org;
+    ssl_certificate /etc/rpc/rpc.pem;
+    ssl_certificate_key /etc/rpc/rpc.key;
+
+    location / {
+        proxy_pass            http://host.docker.internal:8545/;
+        proxy_http_version    1.1;
+        proxy_set_header      Host "$host";
+        proxy_set_header      X-Real-IP "$remote_addr";
+        proxy_set_header      X-Forwarded-For "$proxy_add_x_forwarded_for";
+        proxy_set_header      X-Forwarded-Proto "$scheme";
+        proxy_set_header      Upgrade "$http_upgrade";
+        proxy_set_header      Connection $connection_upgrade;
+        proxy_cache_bypass    $http_upgrade;
     }
 }
